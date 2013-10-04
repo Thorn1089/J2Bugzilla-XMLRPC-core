@@ -3,9 +3,10 @@
  * 
  */
 
-package com.j2bugzilla;
+package com.j2bugzilla.core;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,7 +21,9 @@ public class BugRepoImpl implements BugRepository {
 	
 	private BugzillaServer bServ = null;
 	
-	protected BugRepoImpl(BugzillaServer bs)
+	protected BugRepoImpl(){}
+	
+	protected void setBugzillaServer(BugzillaServer bs)
 	{
 		this.bServ = bs;
 	}
@@ -38,7 +41,7 @@ public class BugRepoImpl implements BugRepository {
 	public Optional<Bug> get(int id) {
 		Map<Object, Object> result, params = new HashMap<Object, Object>();
 		params.put("id", id);
-		result = bServ.fire("Bug.get", params);
+		result = bServ.execute("Bug.get", params);
 		if (result != null)
 		{
 			Map<String, Object> bug1 = (Map<String,Object>)result.get("bugs");
@@ -50,51 +53,33 @@ public class BugRepoImpl implements BugRepository {
 			String pname = (String)bug1.get("product");
 			
 			params = new HashMap<Object, Object>();
-			params.put("id", pname);
-			result = bServ.fire("Product.get", params);
+			String[] namesArray = {pname};
+			params.put("names", namesArray);
+			result = bServ.execute("Product.get", params);
 		
 			Object[] prodArray = (Object[])result.get("products");
 			Map<String,Object> prodMap = (Map<String, Object>)prodArray[0];
 
-			//At the time of this comment, productFromMap doesn't exist, it must be written...
-			Product prod = bServ.getProductRepository().productFromMap(prodMap);
+			Product prod = ProductRepoImpl.productFromMap(prodMap);
 			
-			Bug returnBug = this.bugFromMap(bug1, prod);
-			
-			
+			Bug returnBug = BugRepoImpl.bugFromMap(bug1, prod);
+			return Optional.<Bug>of(returnBug);
 		}
 		
 		
 		return Optional.<Bug>absent();
 		
 	}
-
-	public Set<Bug> getAll(int... ids) {
-		// TODO Auto-generated method stub
-		
-		return null;
-	}
-
-	public void update(Bug bug) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public Set<Bug> search(SearchParam... params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
 	/**
 	 * Creates a {@link com.j2bugzilla.api.Bug} out of a Map resulting from a call to Bug.create or Bug.get.
-	 * It's protected because we may just find a use for it elsewhere, but it should just be an implementation detail.
-	 * We don't want consmers using it.
+	 * It's private because it should just be an implementation detail. We don't want consumers using it.
 	 * 
 	 * @param m A Map representing a single bug. Basically, an element of the "bugs" array in the XML result of a call.
 	 * @param p a Product, which will be added to the created {@code Bug}. A little awkward, but honestly the best way I could think of.
 	 * @return A newly created Bug.
 	 */
-	protected Bug bugFromMap(Map<String, Object> m, Product p)
+	private static Bug bugFromMap(Map<String, Object> m, Product p)
 	{
 		Bug returnBug = new Bug();
 		
@@ -109,10 +94,34 @@ public class BugRepoImpl implements BugRepository {
 		returnBug.setSummary((String)m.get("summary"));
 		
 		//In this version, "version" is in the regular bug map; in other versions it might be under the "internals" map which is in the bug's map.
-		//At time of this comment, don't know what version this IS... we will figure it out.
+		//At time of this comment, don't know what version this IS... we will figure it out later...
 		returnBug.setVersion((String)m.get("version"));
 		//
 		returnBug.setProduct((Product)m.get("product"));
 		return returnBug;
+	}
+
+	public Set<Bug> getAll(int... ids) {
+		HashSet<Bug> retrievedBugs = new HashSet<Bug>();
+		for (int bugId : ids)
+		{
+			Optional<Bug> b = get(bugId);
+			if (b.isPresent())
+			{
+				retrievedBugs.add(b.get());
+			}
+		}
+			
+		return retrievedBugs;
+	}
+
+	public void update(Bug bug) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public Set<Bug> search(SearchParam... params) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

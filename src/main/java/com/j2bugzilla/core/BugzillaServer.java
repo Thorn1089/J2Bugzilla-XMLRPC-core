@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.j2bugzilla;
+package com.j2bugzilla.core;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -28,13 +28,8 @@ import com.j2bugzilla.api.BugzillaException;
 import com.j2bugzilla.api.XmlExceptionHandler;
 
 import org.apache.xmlrpc.XmlRpcException;
-import org.apache.xmlrpc.XmlRpcRequest;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
-import org.apache.xmlrpc.client.XmlRpcClientException;
-import org.apache.xmlrpc.client.XmlRpcSunHttpTransport;
-import org.apache.xmlrpc.client.XmlRpcSunHttpTransportFactory;
-import org.apache.xmlrpc.client.XmlRpcTransport;
 import org.apache.xmlrpc.client.XmlRpcTransportFactory;
 
 /**
@@ -49,7 +44,7 @@ public class BugzillaServer extends Bugzilla {
 	 */
 	private XmlRpcClient client;
 	
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#connectTo(java.lang.String)
 	 */
 	@Override
@@ -57,7 +52,7 @@ public class BugzillaServer extends Bugzilla {
 		this.connectTo(host, null, null);
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#connectTo(java.net.URI)
 	 */
 	@Override
@@ -65,7 +60,7 @@ public class BugzillaServer extends Bugzilla {
 		this.connectTo(host, null, null);
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#connectTo(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
@@ -80,7 +75,7 @@ public class BugzillaServer extends Bugzilla {
 		connectTo(hostURI, httpUser, httpPass);
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#connectTo(java.net.URI, java.lang.String, java.lang.String)
 	 */
 	@Override
@@ -100,31 +95,22 @@ public class BugzillaServer extends Bugzilla {
 		
 		client = new XmlRpcClient();
 		client.setConfig(config);
-		
-        /*
-         * Here, we override the default behavior of the transport factory to properly
-         * handle cookies for authentication
-         */
-		XmlRpcTransportFactory factory = new XmlRpcSunHttpTransportFactory(client) {
-			
-			private final XmlRpcTransport transport = new TransportWithCookies(client);
-			
-			public XmlRpcTransport getTransport() {
-				return transport;
-			}
-		};
+
+		XmlRpcTransportFactory factory = new TransportWithCookiesFactory(client);
 		client.setTransportFactory(factory);
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getBugRepository()
 	 */
 	@Override
 	public BugRepository getBugRepository() {
-		return new BugRepoImpl(this);
+		BugRepoImpl br = new BugRepoImpl();
+		br.setBugzillaServer(this);
+		return br;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getAttachmentRepository()
 	 */
 	@Override
@@ -133,7 +119,7 @@ public class BugzillaServer extends Bugzilla {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getCommentRepository()
 	 */
 	@Override
@@ -142,7 +128,7 @@ public class BugzillaServer extends Bugzilla {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getProductRepository()
 	 */
 	@Override
@@ -151,7 +137,7 @@ public class BugzillaServer extends Bugzilla {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getLegalValuesFor(com.j2bugzilla.api.GlobalFields)
 	 */
 	@Override
@@ -160,7 +146,7 @@ public class BugzillaServer extends Bugzilla {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getVersion()
 	 */
 	@Override
@@ -169,7 +155,7 @@ public class BugzillaServer extends Bugzilla {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#getAccessibleProducts()
 	 */
 	@Override
@@ -178,7 +164,7 @@ public class BugzillaServer extends Bugzilla {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#logIn(java.lang.String, java.lang.String)
 	 */
 	@Override
@@ -187,7 +173,7 @@ public class BugzillaServer extends Bugzilla {
 
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see com.j2bugzilla.api.Bugzilla#logOut()
 	 */
 	@Override
@@ -206,9 +192,8 @@ public class BugzillaServer extends Bugzilla {
 	
 	/**
 	 * Allows the API to execute any properly encoded XML-RPC method.
-	 * If the method completes properly, the {@link BugzillaMethod#setResultMap(Map)}
-	 * method will be called, and the implementation class will provide
-	 * methods to access any data returned. 
+	 * If the method completes properly, returns the Map of the results.
+	 * It is up to the implementation class calling {@code fire} to know how to read it.
 	 * 
 	 * @param pMap The parameters for the call.
 	 * @param method The name of the method to call.
@@ -217,7 +202,7 @@ public class BugzillaServer extends Bugzilla {
 	 * with a descriptive error message for that fault will be thrown.
 	 */
 	@SuppressWarnings("unchecked")//Must cast Object from client.execute()
-	public Map<Object, Object> fire(String method, Map<Object, Object> pMap) throws BugzillaException {
+	public Map<Object, Object> execute(String method, Map<Object, Object> pMap) throws BugzillaException {
 		if(client == null) { 
 			throw new IllegalStateException("Cannot execute a method without connecting!");
 		}//We are not currently connected to an installation
@@ -233,79 +218,4 @@ public class BugzillaServer extends Bugzilla {
 			throw wrapperException;
 		}
 	}
-
-	/**
-	 * We need a transport class which will correctly handle cookies set by Bugzilla. This private
-	 * subclass will appropriately set the Cookie HTTP headers.
-	 * 
-	 * @author Tom
-	 *
-	 */
-	private static final class TransportWithCookies extends XmlRpcSunHttpTransport {
-
-		/**
-		 * A {@code List} of cookies received from the installation, used for authentication
-		 */
-		private List<String> cookies = new ArrayList<String>();
-		
-		/**
-		 * Creates a new {@link TransportWithCookies} object.
-		 * @param pClient The {@link XmlRpcClient} that does the heavy lifting.
-		 */
-		public TransportWithCookies(XmlRpcClient pClient) {
-			super(pClient);
-		}
-		
-		private URLConnection conn;
-		
-		protected URLConnection newURLConnection(URL pURL) throws IOException {
-            conn = super.newURLConnection(pURL);
-            return conn;
-		}
-		
-		/**
-		 * This is the meat of these two overrides -- the HTTP header data now includes the 
-		 * cookies received from the Bugzilla installation on login and will pass them every
-		 * time a connection is made to transmit or receive data.
-		 */
-		protected void initHttpHeaders(XmlRpcRequest request) throws XmlRpcClientException {
-	        super.initHttpHeaders(request);
-	        if(cookies.size()>0) {
-	        	StringBuilder commaSep = new StringBuilder();
-	        	
-	        	for(String str : cookies) {
-	        		commaSep.append(str);
-	        		commaSep.append(",");
-	        	}
-	        	setRequestHeader("Cookie", commaSep.toString());
-	        	
-	        }
-	        
-	    }
-		
-		protected void close() throws XmlRpcClientException {
-            getCookies(conn);
-		}
-		
-		/**
-		 * Retrieves cookie values from the HTTP header of Bugzilla responses
-		 * @param conn
-		 */
-		private void getCookies(URLConnection conn) {
-			if(cookies.size()==0) {
-	    		Map<String, List<String>> headers = conn.getHeaderFields();
-	    		if(headers.containsKey("Set-Cookie")) {//avoid NPE
-	    			List<String> vals = headers.get("Set-Cookie");
-			    	for(String str : vals) {
-			    		cookies.add(str);
-			    	}
-			    	  
-	    		}	
-	    		  
-	    	}
-	    
-	    }
-		
-	}
-	
 }

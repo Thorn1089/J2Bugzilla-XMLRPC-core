@@ -30,6 +30,7 @@ public final class TransportWithCookies extends XmlRpcSunHttpTransport {
 	
 	private URLConnection conn;
 	
+	@Override
 	protected URLConnection newURLConnection(URL pURL) throws IOException {
 		conn = super.newURLConnection(pURL);
 	return conn;
@@ -40,6 +41,7 @@ public final class TransportWithCookies extends XmlRpcSunHttpTransport {
 	 * cookies received from the Bugzilla installation on login and will pass them every
 	 * time a connection is made to transmit or receive data.
 	 */
+	@Override
 	protected void initHttpHeaders(XmlRpcRequest request) throws XmlRpcClientException {
 	super.initHttpHeaders(request);
 	if(cookies.size()>0) {
@@ -71,11 +73,8 @@ public final class TransportWithCookies extends XmlRpcSunHttpTransport {
 			for(String str : vals) {
 				cookies.add(str);
 			}
-			
 		}	
-		
 	}
-
 }
 	
 }

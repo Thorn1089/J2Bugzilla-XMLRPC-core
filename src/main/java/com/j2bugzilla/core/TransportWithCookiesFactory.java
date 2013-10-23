@@ -16,6 +16,7 @@ public class TransportWithCookiesFactory extends XmlRpcSunHttpTransportFactory{
 		transport = new TransportWithCookies(client);
 	}
 	
+	@Override
 	public XmlRpcTransport getTransport() {
 		return transport;
 	}

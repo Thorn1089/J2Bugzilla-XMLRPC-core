@@ -3,15 +3,9 @@
  */
 package com.j2bugzilla.core;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,13 +18,6 @@ import com.j2bugzilla.api.GlobalFields;
 import com.j2bugzilla.api.Product;
 import com.j2bugzilla.api.ProductRepository;
 import com.j2bugzilla.api.BugzillaException;
-//import com.j2bugzilla.base.BugzillaMethod;
-import com.j2bugzilla.api.XmlExceptionHandler;
-
-import org.apache.xmlrpc.XmlRpcException;
-import org.apache.xmlrpc.client.XmlRpcClient;
-import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
-import org.apache.xmlrpc.client.XmlRpcTransportFactory;
 
 /**
  * @author Tristan
@@ -42,7 +29,13 @@ public class BugzillaServer extends Bugzilla {
 	 * The {@link XmlRpcClient} handles all requests to Bugzilla by transforming method names and
 	 * parameters into properly formatted XML documents, which it then transmits to the host.
 	 */
-	private XmlRpcClient client;
+	//private XmlRpcClient client;
+	
+	/**
+	 * We store all the connection information - that is, the XmlRpcClient - in the BugzillaConnection object now.
+	 * It gets passed to each Repository we create.
+	 */
+	private BugzillaConnection bc;
 	
 	/**
 	 * @see com.j2bugzilla.api.Bugzilla#connectTo(java.lang.String)
@@ -80,24 +73,8 @@ public class BugzillaServer extends Bugzilla {
 	 */
 	@Override
 	public void connectTo(URI host, String httpUser, String httpPass) {
-		XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
-		if (httpUser != null) {
-			config.setBasicUserName(httpUser);
-			config.setBasicPassword(httpPass);
-		}
-		URL hostURL;
-		try {
-				hostURL = host.toURL();
-		} catch (MalformedURLException e) {
-				throw new ConnectionException("Failed to convert host URI to URL: " + host.toString(), e);
-		}
-		config.setServerURL(hostURL);
-		
-		client = new XmlRpcClient();
-		client.setConfig(config);
-
-		XmlRpcTransportFactory factory = new TransportWithCookiesFactory(client);
-		client.setTransportFactory(factory);
+		bc = new BugzillaConnection();
+		bc.connectTo(host, httpUser, httpPass);
 	}
 
 	/**
@@ -105,8 +82,8 @@ public class BugzillaServer extends Bugzilla {
 	 */
 	@Override
 	public BugRepository getBugRepository() {
-		BugRepoImpl br = new BugRepoImpl();
-		br.setBugzillaServer(this);
+		checkLoggedIn();
+		BugRepoImpl br = new BugRepoImpl(bc);
 		return br;
 	}
 
@@ -133,6 +110,7 @@ public class BugzillaServer extends Bugzilla {
 	 */
 	@Override
 	public ProductRepository getProductRepository() {
+		checkLoggedIn();
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -169,8 +147,11 @@ public class BugzillaServer extends Bugzilla {
 	 */
 	@Override
 	public void logIn(String user, String pass) {
-		// TODO Auto-generated method stub
-
+		Map<Object, Object> params = new HashMap<Object,Object>();
+		params.put("login", user);
+		params.put("password", pass);
+		Map<Object, Object> response = bc.execute("User.login", params);
+		//We really don't need to store the user ID or the authenticator token -- the cookies work.
 	}
 
 	/**
@@ -179,43 +160,15 @@ public class BugzillaServer extends Bugzilla {
 	@Override
 	public void logOut() {
 		// TODO Auto-generated method stub
-
 	}
 
 	/**
-	 * @param args
+	 * Throws a ConnectionException if we are not logged in; otherwise, returns.
 	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+	private void checkLoggedIn()
+	{
+		// TODO Implement this check
+		return;
 	}
 	
-	/**
-	 * Allows the API to execute any properly encoded XML-RPC method.
-	 * If the method completes properly, returns the Map of the results.
-	 * It is up to the implementation class calling {@code fire} to know how to read it.
-	 * 
-	 * @param pMap The parameters for the call.
-	 * @param method The name of the method to call.
-	 * @return resultMap A map of the results. The caller of {@code fire()} is responsible for handling the conversion of this data into an object.
-	 * @throws BugzillaException If the XML-RPC library returns a fault, a {@link BugzillaException}
-	 * with a descriptive error message for that fault will be thrown.
-	 */
-	@SuppressWarnings("unchecked")//Must cast Object from client.execute()
-	public Map<Object, Object> execute(String method, Map<Object, Object> pMap) throws BugzillaException {
-		if(client == null) { 
-			throw new IllegalStateException("Cannot execute a method without connecting!");
-		}//We are not currently connected to an installation
-		
-		Object[] obj = {pMap};
-		try {
-			Object results = client.execute(method, obj);
-			if(!(results instanceof Map<?, ?>)) { results = Collections.emptyMap(); }
-			Map<Object, Object> readOnlyResults = Collections.unmodifiableMap((Map<Object, Object>)results);
-			return readOnlyResults;
-		} catch (XmlRpcException e) {
-			BugzillaException wrapperException = XmlExceptionHandler.handleFault(e);
-			throw wrapperException;
-		}
-	}
 }

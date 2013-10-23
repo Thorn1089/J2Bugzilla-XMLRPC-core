@@ -19,15 +19,12 @@ import com.j2bugzilla.api.SearchParam;
 
 public class BugRepoImpl implements BugRepository {
 	
-	private BugzillaServer bServ = null;
+	private BugzillaConnection bc;
 	
-	protected BugRepoImpl(){}
-	
-	protected void setBugzillaServer(BugzillaServer bs)
-	{
-		this.bServ = bs;
+	protected BugRepoImpl(BugzillaConnection bc) {
+		this.bc = bc;
 	}
-
+	
 	public int create(Bug bug) {
 		
 		return 0;
@@ -40,11 +37,16 @@ public class BugRepoImpl implements BugRepository {
 	@SuppressWarnings("unchecked")
 	public Optional<Bug> get(int id) {
 		Map<Object, Object> result, params = new HashMap<Object, Object>();
-		params.put("id", id);
-		result = bServ.execute("Bug.get", params);
+
+		//Bug.get requires as input:
+		//"ids" -- a list of IDs/aliases for bugs to retrieve
+		Object[] bugIds = new Object[]{id};
+		params.put("ids", bugIds);
+		result = bc.execute("Bug.get", params);
 		if (result != null)
 		{
-			Map<String, Object> bug1 = (Map<String,Object>)result.get("bugs");
+			Map<String, Object>[] bugs = (HashMap<String, Object>[])result.get("bugs");
+			Map<String, Object> bug1 = bugs[0];
 			
 			
 			//Bug.get returns the name of the product.
@@ -55,7 +57,7 @@ public class BugRepoImpl implements BugRepository {
 			params = new HashMap<Object, Object>();
 			String[] namesArray = {pname};
 			params.put("names", namesArray);
-			result = bServ.execute("Product.get", params);
+			result = bc.execute("Product.get", params);
 		
 			Object[] prodArray = (Object[])result.get("products");
 			Map<String,Object> prodMap = (Map<String, Object>)prodArray[0];
@@ -63,7 +65,7 @@ public class BugRepoImpl implements BugRepository {
 			Product prod = ProductRepoImpl.productFromMap(prodMap);
 			
 			Bug returnBug = BugRepoImpl.bugFromMap(bug1, prod);
-			return Optional.<Bug>of(returnBug);
+			return Optional.of(returnBug);
 		}
 		
 		
@@ -102,7 +104,7 @@ public class BugRepoImpl implements BugRepository {
 	}
 
 	public Set<Bug> getAll(int... ids) {
-		HashSet<Bug> retrievedBugs = new HashSet<Bug>();
+		Set<Bug> retrievedBugs = new HashSet<Bug>();
 		for (int bugId : ids)
 		{
 			Optional<Bug> b = get(bugId);
@@ -111,13 +113,12 @@ public class BugRepoImpl implements BugRepository {
 				retrievedBugs.add(b.get());
 			}
 		}
-			
 		return retrievedBugs;
 	}
 
 	public void update(Bug bug) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	public Set<Bug> search(SearchParam... params) {

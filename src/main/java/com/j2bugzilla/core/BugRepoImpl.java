@@ -21,7 +21,7 @@ public class BugRepoImpl implements BugRepository {
 	
 	private BugzillaConnection bc;
 	
-	protected BugRepoImpl(BugzillaConnection bc) {
+	public BugRepoImpl(BugzillaConnection bc) {
 		this.bc = bc;
 	}
 	
@@ -59,8 +59,8 @@ public class BugRepoImpl implements BugRepository {
 			params.put("names", namesArray);
 			result = bc.execute("Product.get", params);
 		
-			Object[] prodArray = (Object[])result.get("products");
-			Map<String,Object> prodMap = (Map<String, Object>)prodArray[0];
+			Map<String, Object>[] prods = (HashMap<String, Object>[])result.get("products");
+			Map<String,Object> prodMap = (HashMap<String, Object>)prods[0];
 
 			Product prod = ProductRepoImpl.productFromMap(prodMap);
 			
@@ -98,8 +98,8 @@ public class BugRepoImpl implements BugRepository {
 		//In this version, "version" is in the regular bug map; in other versions it might be under the "internals" map which is in the bug's map.
 		//At time of this comment, don't know what version this IS... we will figure it out later...
 		returnBug.setVersion((String)m.get("version"));
+		returnBug.setProduct(p);
 		//
-		returnBug.setProduct((Product)m.get("product"));
 		return returnBug;
 	}
 

@@ -14,6 +14,10 @@ import org.mockito.stubbing.*;
 import static org.mockito.Mockito.*;
 import org.mockito.Mock;
 
+import com.google.common.base.Optional;
+import com.j2bugzilla.api.Bug;
+import com.j2bugzilla.api.Product;
+
 @RunWith(MockitoJUnitRunner.class)
 public class TestGetBug {
 	
@@ -25,7 +29,9 @@ public class TestGetBug {
 	@Test
 	public void runTest()
 	{
-		//Build a returned bug by hand here.
+		//
+		// Build a returned Bug by hand here.
+		//
 		HashMap<Object, Object> testReturnBug = new HashMap<Object, Object>();
 		testReturnBug.put("product", "J2Bugzilla");
 		testReturnBug.put("alias", "i am an alias");
@@ -43,14 +49,49 @@ public class TestGetBug {
 		@SuppressWarnings("unchecked")
 		HashMap<Object, Object>[] bugsArray = new HashMap[]{testReturnBug};
 		
-		//Then put the array into a hashmap... just like it would be returned.
+		//Then put the array into a hashmap, under the "bugs" element... just like it would be returned from the XML-RPC call.
 		HashMap<Object, Object> xmlRpcReturnBug = new HashMap<Object, Object>();
 		xmlRpcReturnBug.put("bugs", bugsArray);
+
+		//And make BugzillaConnector.execute() return it.
+		when(bc.execute(eq("Bug.get"), isA(Map.class))).thenReturn(xmlRpcReturnBug);
 		
-		//Build arguments to the bc.execute() method, to be used in the mocks
-		Map<Object, Object> bugGetArgs = new HashMap<Object, Object>()
+		//
+		// Now construct a Product to return.
+		//
+		HashMap<Object, Object> testReturnProduct = new HashMap<Object, Object>();
+		testReturnProduct.put("id", "3");
+		testReturnProduct.put("name", "J2Bugzilla");
+		testReturnProduct.put("description", "Access a Bugzilla installation from Java without worry about the under-the-hood XML-RPC");
+
+		//Put it into an array...
+		@SuppressWarnings("unchecked")
+		HashMap<Object, Object>[] productArray = new HashMap[]{testReturnProduct};
+
+		//Then put the array into a hashmap.
+		HashMap<Object, Object> xmlRpcReturnProduct = new HashMap<Object, Object>();
+		xmlRpcReturnProduct.put("products", productArray);
+		
+		//And make BugzillaConnector.execute() return it.
+		when(bc.execute(eq("Product.get"), isA(Map.class))).thenReturn(xmlRpcReturnProduct);
 		
 		
-		when(bc.execute("Bug.get", )).thenReturn(xmlRpcReturnBug);
+		bri = new BugRepoImpl(bc);
+		Optional<Bug> returnedBug = bri.get(1234);
+		assertNotEquals(returnedBug.orNull(), null);
+		
+		assertEquals("i am an alias", returnedBug.get().getAlias().get());
+		assertEquals("J2BTest", returnedBug.get().getComponent().get());
+		assertEquals("Windows", returnedBug.get().getOperatingSystem().get());
+		assertEquals("LC3", returnedBug.get().getPlatform().get());
+		assertEquals("FIX IT NOW", returnedBug.get().getPriority().get());
+		assertEquals("Sort of Terribly Devastating", returnedBug.get().getSeverity().get());
+		assertEquals("In Progress", returnedBug.get().getStatus().get());
+		assertEquals("3", returnedBug.get().getVersion().get());
+		
+		Product prod = returnedBug.get().getProduct().get();
+		
+		assertEquals("J2Bugzilla", prod.getName());
+		
 	}
 }

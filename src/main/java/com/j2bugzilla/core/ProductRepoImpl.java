@@ -11,11 +11,11 @@ import com.j2bugzilla.api.ProductRepository;
 
 public class ProductRepoImpl implements ProductRepository {
 
-	private BugzillaServer bServ = null;
+	private BugzillaConnection bc = null;
 	
-	public ProductRepoImpl(BugzillaServer bServ)
+	public ProductRepoImpl(BugzillaConnection bc)
 	{
-		this.bServ = bServ;
+		this.bc = bc;
 	}
 	
 	public int create(Product product) {
@@ -26,7 +26,7 @@ public class ProductRepoImpl implements ProductRepository {
 	public Optional<Product> get(int id) {
 		Map<Object,Object> prodParams = new HashMap<Object,Object>();
 		prodParams.put("id", id);
-		Map<Object,Object> resultMap = bServ.execute("Product.get", prodParams);
+		Map<Object,Object> resultMap = bc.execute("Product.get", prodParams);
 		
 		Object[] prodArray = (Object[])resultMap.get("products");
 		
@@ -55,6 +55,7 @@ public class ProductRepoImpl implements ProductRepository {
 	}
 	
 	/**
+	 * 
 	 * Takes a {@code Map} representing a single Product, returned by the Product.get method of Bugzilla.
 	 * That is, a single hash representing one product, or an item in the {@code products} array.
 	 * See http://www.bugzilla.org/docs/tip/en/html/api/Bugzilla/WebService/Product.html#get
@@ -66,7 +67,7 @@ public class ProductRepoImpl implements ProductRepository {
 		int id;
 		String name, description;
 		
-		id = (Integer)prodMap.get("id");
+		id = Integer.parseInt((String)prodMap.get("id"));
 		
 		name = (String)prodMap.get("name");
 		

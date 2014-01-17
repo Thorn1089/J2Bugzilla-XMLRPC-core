@@ -2,8 +2,12 @@ package com.j2bugzilla.xmlrpc.core;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.client.XmlRpcTransport;
@@ -110,13 +114,30 @@ public class BugzillaImpl extends Bugzilla {
 
 	@Override
 	public void logIn(String user, String pass) {
-		// TODO Auto-generated method stub
+		if(client == null) {
+			throw new IllegalStateException("Connect to a URI before logging in");
+		}
 
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("login", user);
+		params.put("password", pass);
+		try {
+			client.execute("User.login", Collections.singletonList(params));
+		} catch (XmlRpcException e) {
+			throw new BugzillaTransportException("Could not log in", e);
+		}
 	}
 
 	@Override
 	public void logOut() {
-		// TODO Auto-generated method stub
-
+		if(client == null) {
+			throw new IllegalStateException("Connect to a URI before logging out");
+		}
+		
+		try {
+			client.execute("User.logout", Collections.singletonList(new HashMap<String, String>()));
+		} catch (XmlRpcException e) {
+			throw new BugzillaTransportException("Could not log out", e);
+		}
 	}
 }

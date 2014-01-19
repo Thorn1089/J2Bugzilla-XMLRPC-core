@@ -14,7 +14,6 @@ import org.apache.xmlrpc.client.XmlRpcTransport;
 import org.apache.xmlrpc.client.XmlRpcTransportFactory;
 
 import com.j2bugzilla.api.AttachmentRepository;
-import com.j2bugzilla.api.BugRepository;
 import com.j2bugzilla.api.Bugzilla;
 import com.j2bugzilla.api.CommentRepository;
 import com.j2bugzilla.api.GlobalFields;
@@ -71,9 +70,11 @@ public class BugzillaImpl extends Bugzilla {
 	}
 
 	@Override
-	public BugRepository getBugRepository() {
-		// TODO Auto-generated method stub
-		return null;
+	public BugRepositoryImpl getBugRepository() {
+		if(client == null) {
+			throw new IllegalStateException("Cannot retrieve a repository before connecting to an installation");
+		}
+		return new BugRepositoryImpl(client);
 	}
 
 	@Override

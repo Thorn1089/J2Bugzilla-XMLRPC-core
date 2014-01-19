@@ -8,9 +8,11 @@ import java.util.Set;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.j2bugzilla.api.Bug;
 import com.j2bugzilla.api.BugRepository;
+import com.j2bugzilla.api.Product;
 import com.j2bugzilla.api.SearchParam;
 
 /**
@@ -42,10 +44,15 @@ public class BugRepositoryImpl implements BugRepository {
 		params.put("severity", bug.getSeverity().orNull());
 		params.put("alias", bug.getAlias().orNull());
 		params.put("summary", bug.getSummary().orNull());
-		params.put("product", bug.getProduct().orNull());
+		params.put("product", bug.getProduct().transform(new Function<Product, String>() {
+			@Override
+			public String apply(Product input) {
+				return input.getName();
+			}
+		}).orNull());
 		params.put("component", bug.getComponent().orNull());
 		params.put("version", bug.getVersion().orNull());
-		params.put("status", bug.getVersion().orNull());
+		params.put("status", bug.getStatus().orNull());
 		params.put("resolution", bug.getResolution().orNull());
 		params.put("op_sys", bug.getOperatingSystem().orNull());
 		params.put("platform", bug.getPlatform().orNull());
@@ -62,8 +69,53 @@ public class BugRepositoryImpl implements BugRepository {
 
 	@Override
 	public Optional<Bug> get(int id) {
-		// TODO Auto-generated method stub
-		return null;
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("ids", id);
+		
+		try {
+			@SuppressWarnings("unchecked")
+			Map<Object, Object> response = (Map<Object, Object>) client.execute("Bug.get", Collections.singletonList(params));
+			Object[] bugs = (Object[]) response.get("bugs");
+			if(bugs.length == 0) {
+				return Optional.absent();
+			} else {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> bug = (Map<String, Object>) bugs[0];
+				Bug newBug = new Bug(id);
+				newBug.setPriority((String)bug.get("priority"));
+				newBug.setSeverity((String)bug.get("severity"));
+				newBug.setAlias((String)bug.get("alias"));
+				newBug.setSummary((String)bug.get("summary"));
+				//TODO Retrieve the product this bug belongs to by the name returned
+				newBug.setComponent((String)bug.get("component"));
+				
+				/*
+				 * Older versions of Bugzilla didn't return the version in the regular
+				 * hash -- check the 'internals'
+				 */
+				if(bug.containsKey("version")) {
+					newBug.setVersion((String)bug.get("version"));
+				} else {
+					@SuppressWarnings("unchecked")
+					Map<String, Object> internals = (Map<String, Object>)bug.get("internals");
+					Object version = internals.get("version");
+					if(version instanceof Double) {
+						newBug.setVersion(Double.toString((Double)version));
+					} else if(version instanceof String) {
+						newBug.setVersion((String)version);
+					}
+				}
+				
+				newBug.setStatus((String)bug.get("status"));
+				newBug.setResolution((String)bug.get("resolution"));
+				newBug.setOperatingSystem((String)bug.get("op_sys"));
+				newBug.setPlatform((String)bug.get("platform"));
+
+				return Optional.of(newBug);
+			}
+		} catch (XmlRpcException e) {
+			throw new BugzillaTransportException("Could not retrieve bug", e);
+		}
 	}
 
 	@Override

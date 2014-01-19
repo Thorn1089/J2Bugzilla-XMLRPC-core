@@ -113,14 +113,41 @@ public class BugRepositoryImpl implements BugRepository {
 
 	@Override
 	public void update(Bug bug) {
-		// TODO Auto-generated method stub
-
+		Map<String, Object> params = new HashMap<String, Object>();
+		put(params, "priority", bug.getPriority());
+		put(params, "severity", bug.getSeverity());
+		put(params, "alias", bug.getAlias());
+		put(params, "summary", bug.getSummary());
+		put(params, "product", bug.getProduct().transform(new Function<Product, String>() {
+			@Override
+			public String apply(Product input) {
+				return input.getName();
+			}
+		}));
+		put(params, "component", bug.getComponent());
+		put(params, "version", bug.getVersion());
+		put(params, "status", bug.getStatus());
+		put(params, "resolution", bug.getResolution());
+		put(params, "op_sys", bug.getOperatingSystem());
+		put(params, "platform", bug.getPlatform());
+		
+		try {
+			client.execute("Bug.update", Collections.singletonList(params));
+		} catch (XmlRpcException e) {
+			throw new BugzillaTransportException("Could not update bug", e);
+		}
 	}
 
 	@Override
 	public Set<Bug> search(SearchParam... params) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private void put(Map<String, Object> map, String key, Optional<? extends Object> value) {
+		if(value.isPresent()) {
+			map.put(key, value.get());
+		}
 	}
 	
 	private Bug parseBug(Map<String, Object> bug) {

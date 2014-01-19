@@ -2,6 +2,7 @@ package com.j2bugzilla.xmlrpc.core;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,36 +82,7 @@ public class BugRepositoryImpl implements BugRepository {
 			} else {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> bug = (Map<String, Object>) bugs[0];
-				Bug newBug = new Bug(id);
-				newBug.setPriority((String)bug.get("priority"));
-				newBug.setSeverity((String)bug.get("severity"));
-				newBug.setAlias((String)bug.get("alias"));
-				newBug.setSummary((String)bug.get("summary"));
-				//TODO Retrieve the product this bug belongs to by the name returned
-				newBug.setComponent((String)bug.get("component"));
-				
-				/*
-				 * Older versions of Bugzilla didn't return the version in the regular
-				 * hash -- check the 'internals'
-				 */
-				if(bug.containsKey("version")) {
-					newBug.setVersion((String)bug.get("version"));
-				} else {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> internals = (Map<String, Object>)bug.get("internals");
-					Object version = internals.get("version");
-					if(version instanceof Double) {
-						newBug.setVersion(Double.toString((Double)version));
-					} else if(version instanceof String) {
-						newBug.setVersion((String)version);
-					}
-				}
-				
-				newBug.setStatus((String)bug.get("status"));
-				newBug.setResolution((String)bug.get("resolution"));
-				newBug.setOperatingSystem((String)bug.get("op_sys"));
-				newBug.setPlatform((String)bug.get("platform"));
-
+				Bug newBug = parseBug(bug);
 				return Optional.of(newBug);
 			}
 		} catch (XmlRpcException e) {
@@ -120,8 +92,23 @@ public class BugRepositoryImpl implements BugRepository {
 
 	@Override
 	public Set<Bug> getAll(int... ids) {
-		// TODO Auto-generated method stub
-		return null;
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("ids", ids);
+		
+		Set<Bug> foundBugs = new HashSet<Bug>();
+		try {
+			@SuppressWarnings("unchecked")
+			Map<Object, Object> response = (Map<Object, Object>) client.execute("Bug.get", Collections.singletonList(params));
+			Object[] bugs = (Object[]) response.get("bugs");
+			for(Object bug : bugs) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> bugMap = (Map<String, Object>)bug;
+				foundBugs.add(parseBug(bugMap));
+			}
+			return foundBugs;
+		} catch (XmlRpcException e) {
+			throw new BugzillaTransportException("Could not retrieve bugs", e);
+		}
 	}
 
 	@Override
@@ -135,5 +122,39 @@ public class BugRepositoryImpl implements BugRepository {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	private Bug parseBug(Map<String, Object> bug) {
+		Bug newBug = new Bug((Integer) bug.get("id"));
+		newBug.setPriority((String)bug.get("priority"));
+		newBug.setSeverity((String)bug.get("severity"));
+		newBug.setAlias((String)bug.get("alias"));
+		newBug.setSummary((String)bug.get("summary"));
+		//TODO Retrieve the product this bug belongs to by the name returned
+		newBug.setComponent((String)bug.get("component"));
+		
+		/*
+		 * Older versions of Bugzilla didn't return the version in the regular
+		 * hash -- check the 'internals'
+		 */
+		if(bug.containsKey("version")) {
+			newBug.setVersion((String)bug.get("version"));
+		} else {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> internals = (Map<String, Object>)bug.get("internals");
+			Object version = internals.get("version");
+			if(version instanceof Double) {
+				newBug.setVersion(Double.toString((Double)version));
+			} else if(version instanceof String) {
+				newBug.setVersion((String)version);
+			}
+		}
+		
+		newBug.setStatus((String)bug.get("status"));
+		newBug.setResolution((String)bug.get("resolution"));
+		newBug.setOperatingSystem((String)bug.get("op_sys"));
+		newBug.setPlatform((String)bug.get("platform"));
+		return newBug;
+	}
+
 
 }

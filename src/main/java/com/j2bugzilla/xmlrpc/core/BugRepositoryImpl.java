@@ -140,8 +140,28 @@ public class BugRepositoryImpl implements BugRepository {
 
 	@Override
 	public Set<Bug> search(SearchParam... params) {
-		// TODO Auto-generated method stub
-		return null;
+		if(params.length == 0) {
+			throw new IllegalArgumentException("At least one search parameter must be provided");
+		}
+		Map<String, Object> request = new HashMap<String, Object>();
+		for(SearchParam param : params) {
+			request.put(param.getDimension().getName(), param.getQuery());
+		}
+		
+		try {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> results = (Map<String, Object>) client.execute("Bug.search", Collections.singletonList(request));
+			Set<Bug> foundBugs = new HashSet<Bug>();
+			Object[] bugs = (Object[]) results.get("bugs");
+			for(Object bug : bugs) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> bugMap = (Map<String, Object>)bug;
+				foundBugs.add(parseBug(bugMap));
+			}
+			return foundBugs;
+		} catch (XmlRpcException e) {
+			throw new BugzillaTransportException("Could not search bugs", e);
+		}
 	}
 	
 	private void put(Map<String, Object> map, String key, Optional<? extends Object> value) {

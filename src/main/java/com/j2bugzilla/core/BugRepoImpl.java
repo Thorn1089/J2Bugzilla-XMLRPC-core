@@ -5,8 +5,10 @@
 
 package com.j2bugzilla.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,9 +17,12 @@ import com.j2bugzilla.api.Bug;
 import com.j2bugzilla.api.BugRepository;
 import com.j2bugzilla.api.BugzillaException;
 import com.j2bugzilla.api.Product;
+import com.j2bugzilla.api.SearchBy;
 import com.j2bugzilla.api.SearchParam;
 
 public class BugRepoImpl implements BugRepository {
+	
+
 	
 	private BugzillaConnection bc;
 	
@@ -29,13 +34,14 @@ public class BugRepoImpl implements BugRepository {
 		
 		return 0;
 	}
+	
 
 	/**
 	 * @inheritDoc
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
-	public Optional<Bug> get(int id) {
+	public Optional<Bug> get(int id) throws BugzillaException {
 		Map<Object, Object> result, params = new HashMap<Object, Object>();
 
 		//Bug.get requires as input:
@@ -117,12 +123,80 @@ public class BugRepoImpl implements BugRepository {
 	}
 
 	public void update(Bug bug) {
-		// TODO Auto-generated method stub
+		Map<Object, Object> result, params = new HashMap<Object, Object>();
+		
+		int[] ids = {bug.getId().get()};
+		params.put("ids", ids);			//This will be the ID of the bug we are changing.
+		
+		//The rest are the values we're setting things to.
+		
+		if (bug.getAlias().isPresent())
+			params.put("alias", bug.getAlias().get());
+		
+		if (bug.getComponent().isPresent())
+			params.put("component", bug.getComponent().get());
+		
+		if (bug.getOperatingSystem().isPresent())
+			params.put("opSys", bug.getOperatingSystem().get());
+		
+		if (bug.getPlatform().isPresent())
+			params.put("platform", bug.getPlatform().get());
+		
+		if (bug.getPriority().isPresent())
+			params.put("priority", bug.getPriority().get());
+		
+		if (bug.getResolution().isPresent())
+			params.put("resolution", bug.getResolution().get());
+		
+		if (bug.getSeverity().isPresent())
+			params.put("severity", bug.getSeverity().get());
+		
+		if (bug.getStatus().isPresent())
+			params.put("status", bug.getStatus().get());
+		
+		if (bug.getSummary().isPresent())
+			params.put("summary", bug.getSummary().get());
+		
+		if (bug.getVersion().isPresent())
+			params.put("version", bug.getVersion().get());
+		
+		result = bc.execute("Bug.update", params);
+		
 		
 	}
 
+	/**
+	 * Search for bugs in the Bugzilla database.
+	 * This method takes an arbitrary number of {@code SearchParam}s denoting the fields to be searched.
+	 * The Webservice method can take either an element, or a list of elements, for each criterion.
+	 * When a list is given, bugs are returned which match any of the items given for the criterion.
+	 * As such, multiples of any {@code SearchBy} can be passed in.
+	 */
 	public Set<Bug> search(SearchParam... params) {
-		// TODO Auto-generated method stub
+		Map<String, Object> results, parameters = new HashMap<String,Object>();
+		
+		Map<SearchBy, List<String>> searchBys = new HashMap<SearchBy, List<String>>();
+		
+		for (SearchBy sb : SearchBy.values())
+		{
+			searchBys.put(sb, new ArrayList<String>());
+		}
+		
+		for (SearchParam sp : params)
+		{
+			searchBys.get(sp.getDimension()).add(sp.getQuery());
+		}
+		
+		for (SearchBy sb : SearchBy.values())
+		{
+			if (searchBys.get(sb).size() == 0) continue;
+			
+			if (searchBys.get(sb).size() == 1)
+			{
+				
+			}
+		}
+		
 		return null;
 	}
 }

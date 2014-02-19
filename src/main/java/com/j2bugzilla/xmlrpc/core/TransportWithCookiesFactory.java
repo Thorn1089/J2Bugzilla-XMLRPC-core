@@ -1,4 +1,4 @@
-package com.j2bugzilla.core;
+package com.j2bugzilla.xmlrpc.core;
 
 import org.apache.xmlrpc.client.XmlRpcSunHttpTransportFactory;
 import org.apache.xmlrpc.client.XmlRpcTransport;

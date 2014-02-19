@@ -42,7 +42,7 @@ public class TestGetBug {
 		testReturnBug.put("resolution", "");
 		testReturnBug.put("severity", "Sort of Terribly Devastating");
 		testReturnBug.put("status", "In Progress");
-		testReturnBug.put("summary", "omg everything is breaking, who will save us from the dangers of bad code?!\n\nONE MAN... EVERYONE'S HERO... TRISTAN.");
+		testReturnBug.put("summary", "everything is broken and you need to fix it immediately");
 		testReturnBug.put("version", "3");
 		
 		//Put it into an array...

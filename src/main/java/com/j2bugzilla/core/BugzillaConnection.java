@@ -14,6 +14,7 @@ import org.apache.xmlrpc.client.XmlRpcTransportFactory;
 import com.j2bugzilla.api.BugzillaException;
 import com.j2bugzilla.api.ConnectionException;
 import com.j2bugzilla.api.XmlExceptionHandler;
+import com.j2bugzilla.xmlrpc.core.TransportWithCookiesFactory;
 
 /**
  * 

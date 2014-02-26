@@ -21,9 +21,7 @@ import com.j2bugzilla.api.SearchBy;
 import com.j2bugzilla.api.SearchParam;
 
 public class BugRepoImpl implements BugRepository {
-	
 
-	
 	private BugzillaConnection bc;
 	
 	public BugRepoImpl(BugzillaConnection bc) {
@@ -31,8 +29,57 @@ public class BugRepoImpl implements BugRepository {
 	}
 	
 	public int create(Bug bug) {
+		Map<Object, Object> result, params = new HashMap<Object, Object>();
 		
-		return 0;
+		/*
+		 * Required parameters
+		 * Wondering if we should raise an exception or let Bugzilla fault.
+		 * I think Bugzilla fault.
+		 */
+		
+		if (bug.getProduct().isPresent())
+			params.put("product", bug.getProduct().get().getName());
+		if (bug.getComponent().isPresent())
+			params.put("component", bug.getComponent().get());
+		if (bug.getSummary().isPresent())
+			params.put("summary", bug.getSummary().get());
+		if (bug.getVersion().isPresent())
+			params.put("version", bug.getVersion().get());
+		
+		
+		/*
+		 *  Defaulted parameters, can be omitted.
+		 *
+		 */
+		
+		/* Not included: description.
+		 * An installation can require the description field, we won't know until we make the call.
+		 * We don't support it in Bug right now.
+		 */
+		 //params.put("description", "");
+		
+		if (bug.getOperatingSystem().isPresent())
+			params.put("op_sys", bug.getOperatingSystem().get());
+		if (bug.getPlatform().isPresent())
+			params.put("platform", bug.getPlatform().get());
+		if (bug.getPriority().isPresent())
+			params.put("priority", bug.getPriority().get());
+		if (bug.getSeverity().isPresent())
+			params.put("severity", bug.getSeverity().get());
+		
+		//Everything else we currently support.
+		
+		if (bug.getAlias().isPresent())
+			params.put("alias", bug.getAlias().get());
+		if (bug.getStatus().isPresent())
+			params.put("status", bug.getStatus().get());
+		if (bug.getResolution().isPresent())
+			params.put("resolution", bug.getResolution().get());
+		
+		result = bc.execute("Bug.create", params);
+		
+		String newID = (String)result.get("id");
+		return Integer.parseInt(newID);
 	}
 	
 
@@ -173,7 +220,7 @@ public class BugRepoImpl implements BugRepository {
 	 * As such, multiples of any {@code SearchBy} can be passed in.
 	 */
 	public Set<Bug> search(SearchParam... params) {
-		Map<String, Object> results, parameters = new HashMap<String,Object>();
+		Map<Object, Object> results, parameters = new HashMap<Object, Object>();
 		
 		Map<SearchBy, List<String>> searchBys = new HashMap<SearchBy, List<String>>();
 		
@@ -189,14 +236,48 @@ public class BugRepoImpl implements BugRepository {
 		
 		for (SearchBy sb : SearchBy.values())
 		{
-			if (searchBys.get(sb).size() == 0) continue;
+			List<String> sbl = searchBys.get(sb);
+			if (sbl.size() == 0) continue;
 			
-			if (searchBys.get(sb).size() == 1)
+			else if (sbl.size() == 1)
 			{
-				
+				parameters.put(sb.getName(), sbl.get(0));
+			}
+			
+			else 
+			{
+				parameters.put(sb.getName(), sbl);
 			}
 		}
 		
-		return null;
+		results = bc.execute("Bug.search", parameters);
+		
+		Set<Bug> foundBugs = new HashSet<Bug>();
+		
+		@SuppressWarnings("unchecked")
+		Map<String, Object>[] bugs = (Map<String, Object>[])results.get("bugs");
+		
+		for (Map<String, Object> bug : bugs)
+		{
+			String pname = (String)bug.get("product");
+			
+			parameters = new HashMap<Object, Object>();
+			String[] namesArray = {pname};
+			parameters.put("names", namesArray);
+			Map<Object, Object> prodResult = bc.execute("Product.get", parameters);
+		
+			@SuppressWarnings("unchecked")
+			Map<String, Object>[] prods = (HashMap<String, Object>[])prodResult.get("products");
+			Map<String,Object> prodMap = (HashMap<String, Object>)prods[0];
+
+			//There could be a way to make this a little more efficient.
+			//Such as caching the products, and checking that cache before making yet another call.
+			//After all, it could be the case that "product" was a specified search parameter...
+			Product prod = ProductRepoImpl.productFromMap(prodMap);
+			foundBugs.add(bugFromMap(bug, prod));
+		}
+		
+		return foundBugs;
+		
 	}
 }

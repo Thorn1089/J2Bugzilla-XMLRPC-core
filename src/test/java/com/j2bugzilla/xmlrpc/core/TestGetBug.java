@@ -1,4 +1,4 @@
-package com.j2bugzilla.core;
+package com.j2bugzilla.xmlrpc.core;
 
 import static org.junit.Assert.*;
 
@@ -12,11 +12,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.*;
 
 import static org.mockito.Mockito.*;
+
 import org.mockito.Mock;
 
 import com.google.common.base.Optional;
 import com.j2bugzilla.api.Bug;
 import com.j2bugzilla.api.Product;
+import com.j2bugzilla.core.BugRepoImpl;
+import com.j2bugzilla.core.BugzillaConnection;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestGetBug {

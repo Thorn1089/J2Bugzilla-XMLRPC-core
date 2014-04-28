@@ -67,7 +67,7 @@ public class ProductRepoImpl implements ProductRepository {
 		int id;
 		String name, description;
 		
-		id = Integer.parseInt((String)prodMap.get("id"));
+		id = (int)prodMap.get("id");
 		
 		name = (String)prodMap.get("name");
 		

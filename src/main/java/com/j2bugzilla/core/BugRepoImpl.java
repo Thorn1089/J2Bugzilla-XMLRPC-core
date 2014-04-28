@@ -28,6 +28,7 @@ public class BugRepoImpl implements BugRepository {
 		this.bc = bc;
 	}
 	
+	@Override
 	public int create(Bug bug) {
 		Map<Object, Object> result, params = new HashMap<Object, Object>();
 		
@@ -82,12 +83,12 @@ public class BugRepoImpl implements BugRepository {
 		return Integer.parseInt(newID);
 	}
 	
-
 	/**
 	 * @inheritDoc
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
+	@Override
 	public Optional<Bug> get(int id) throws BugzillaException {
 		Map<Object, Object> result, params = new HashMap<Object, Object>();
 
@@ -98,8 +99,8 @@ public class BugRepoImpl implements BugRepository {
 		result = bc.execute("Bug.get", params);
 		if (result != null)
 		{
-			Map<String, Object>[] bugs = (HashMap<String, Object>[])result.get("bugs");
-			Map<String, Object> bug1 = bugs[0];
+			Object[] bugs = (Object[])result.get("bugs");
+			Map<String, Object> bug1 = (HashMap<String, Object>)bugs[0];
 			
 			
 			//Bug.get returns the name of the product.
@@ -112,7 +113,7 @@ public class BugRepoImpl implements BugRepository {
 			params.put("names", namesArray);
 			result = bc.execute("Product.get", params);
 		
-			Map<String, Object>[] prods = (HashMap<String, Object>[])result.get("products");
+			Object[] prods = (Object[])result.get("products");
 			Map<String,Object> prodMap = (HashMap<String, Object>)prods[0];
 
 			Product prod = ProductRepoImpl.productFromMap(prodMap);
@@ -156,6 +157,7 @@ public class BugRepoImpl implements BugRepository {
 		return returnBug;
 	}
 
+	@Override
 	public Set<Bug> getAll(int... ids) {
 		Set<Bug> retrievedBugs = new HashSet<Bug>();
 		for (int bugId : ids)
@@ -169,6 +171,7 @@ public class BugRepoImpl implements BugRepository {
 		return retrievedBugs;
 	}
 
+	@Override
 	public void update(Bug bug) {
 		Map<Object, Object> result, params = new HashMap<Object, Object>();
 		
@@ -219,6 +222,7 @@ public class BugRepoImpl implements BugRepository {
 	 * When a list is given, bugs are returned which match any of the items given for the criterion.
 	 * As such, multiples of any {@code SearchBy} can be passed in.
 	 */
+	@Override
 	public Set<Bug> search(SearchParam... params) {
 		Map<Object, Object> results, parameters = new HashMap<Object, Object>();
 		

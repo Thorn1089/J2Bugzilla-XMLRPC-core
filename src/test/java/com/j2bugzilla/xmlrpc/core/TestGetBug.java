@@ -35,7 +35,7 @@ public class TestGetBug {
 		//
 		// Build a returned Bug by hand here.
 		//
-		HashMap<Object, Object> testReturnBug = new HashMap<Object, Object>();
+		HashMap<String, Object> testReturnBug = new HashMap<String, Object>();
 		testReturnBug.put("product", "J2Bugzilla");
 		testReturnBug.put("alias", "i am an alias");
 		testReturnBug.put("component", "J2BTest");
@@ -50,10 +50,10 @@ public class TestGetBug {
 		
 		//Put it into an array...
 		@SuppressWarnings("unchecked")
-		HashMap<Object, Object>[] bugsArray = new HashMap[]{testReturnBug};
+		HashMap<String, Object>[] bugsArray = new HashMap[]{testReturnBug};
 		
 		//Then put the array into a hashmap, under the "bugs" element... just like it would be returned from the XML-RPC call.
-		HashMap<Object, Object> xmlRpcReturnBug = new HashMap<Object, Object>();
+		HashMap<String, Object> xmlRpcReturnBug = new HashMap<String, Object>();
 		xmlRpcReturnBug.put("bugs", bugsArray);
 
 		//And make BugzillaConnector.execute() return it.
@@ -63,7 +63,7 @@ public class TestGetBug {
 		// Now construct a Product to return.
 		//
 		HashMap<Object, Object> testReturnProduct = new HashMap<Object, Object>();
-		testReturnProduct.put("id", "3");
+		testReturnProduct.put("id", 3);
 		testReturnProduct.put("name", "J2Bugzilla");
 		testReturnProduct.put("description", "Access a Bugzilla installation from Java without worry about the under-the-hood XML-RPC");
 

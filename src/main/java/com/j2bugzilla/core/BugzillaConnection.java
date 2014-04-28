@@ -28,32 +28,15 @@ public class BugzillaConnection {
 
 	private XmlRpcClient client;
 	
-	protected void connectTo(URI host, String httpUser, String httpPass)
+	public BugzillaConnection(XmlRpcClient client)
 	{
-		XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
-		if (httpUser != null) {
-			config.setBasicUserName(httpUser);
-			config.setBasicPassword(httpPass);
-		}
-		URL hostURL;
-		try {
-				hostURL = host.toURL();
-		} catch (MalformedURLException e) {
-				throw new ConnectionException("Failed to convert host URI to URL: " + host.toString(), e);
-		}
-		config.setServerURL(hostURL);
-		
-		client = new XmlRpcClient();
-		client.setConfig(config);
-
-		XmlRpcTransportFactory factory = new TransportWithCookiesFactory(client);
-		client.setTransportFactory(factory);
+		this.client = client;
 	}
-
+	
 	/**
 	 * Allows the API to execute any properly encoded XML-RPC method.
 	 * If the method completes properly, returns the Map of the results.
-	 * It is up to the implementation class calling {@code fire} to know how to read it.
+	 * It is up to the implementation class calling {@code execute} to know how to read it.
 	 * 
 	 * @param pMap The parameters for the call.
 	 * @param method The name of the method to call.

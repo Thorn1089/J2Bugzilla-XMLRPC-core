@@ -20,6 +20,8 @@ import com.j2bugzilla.api.CommentRepository;
 import com.j2bugzilla.api.GlobalFields;
 import com.j2bugzilla.api.Product;
 import com.j2bugzilla.api.ProductRepository;
+import com.j2bugzilla.core.BugRepoImpl;
+import com.j2bugzilla.core.BugzillaConnection;
 
 /**
  * The {@link BugzillaImpl} class is responsible for implementing the interface defined by the main
@@ -72,8 +74,9 @@ public class BugzillaImpl extends Bugzilla {
 
 	@Override
 	public BugRepository getBugRepository() {
-		// TODO Auto-generated method stub
-		return null;
+		checkLoggedIn();
+		BugRepoImpl br = new BugRepoImpl(new BugzillaConnection(this.client));
+		return br;
 	}
 
 	@Override
@@ -139,5 +142,14 @@ public class BugzillaImpl extends Bugzilla {
 		} catch (XmlRpcException e) {
 			throw new BugzillaTransportException("Could not log out", e);
 		}
+	}
+	
+	/**
+	 * Throws a ConnectionException if we are not logged in; otherwise, returns.
+	 */
+	private void checkLoggedIn()
+	{
+		// TODO Implement this check
+		return;
 	}
 }
